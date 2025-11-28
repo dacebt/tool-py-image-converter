@@ -4,6 +4,7 @@ Custom styled widget classes that apply the application theme.
 
 from typing import Literal
 
+from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QLabel, QLineEdit, QPushButton, QTextEdit
 
 from ui.theme import Theme
@@ -33,6 +34,10 @@ class StyledButton(QPushButton):  # pylint: disable=too-many-ancestors
         # Apply stylesheet based on button type
         button_stylesheet = Theme.get_button_stylesheet(button_type)
         self.setStyleSheet(button_stylesheet)
+        
+        # Set pointer cursor for actionable buttons
+        if button_type != "DISABLED":
+            self.setCursor(Qt.CursorShape.PointingHandCursor)
         
         if button_type == "DISABLED":
             self.setEnabled(False)

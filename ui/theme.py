@@ -76,6 +76,7 @@ class Theme:  # pylint: disable=too-few-public-methods
             border-radius: 4px;
             padding: 8px 16px;
             font-weight: bold;
+            cursor: pointer;
         }}
 
         QPushButton.primary-button:hover {{
@@ -102,6 +103,7 @@ class Theme:  # pylint: disable=too-few-public-methods
             border-radius: 4px;
             padding: 8px 16px;
             font-weight: bold;
+            cursor: pointer;
         }}
 
         QPushButton.secondary-button:hover {{
@@ -233,6 +235,7 @@ class Theme:  # pylint: disable=too-few-public-methods
                     border-radius: 4px;
                     padding: 8px 16px;
                     font-weight: bold;
+                    cursor: pointer;
                 }}
                 QPushButton:hover {{
                     background-color: {cls.PURPLE_VIBRANT};
@@ -257,6 +260,7 @@ class Theme:  # pylint: disable=too-few-public-methods
                     border-radius: 4px;
                     padding: 8px 16px;
                     font-weight: bold;
+                    cursor: pointer;
                 }}
                 QPushButton:hover {{
                     background-color: {cls.PURPLE_VIBRANT};
