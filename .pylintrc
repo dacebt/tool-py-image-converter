@@ -1,0 +1,22 @@
+[MASTER]
+# Ignore PyQt6 modules that pylint doesn't have type stubs for
+ignore=PyQt6
+
+[MESSAGES CONTROL]
+# Disable whitespace and trailing whitespace checks
+disable=
+    trailing-whitespace,
+    missing-final-newline,
+    missing-module-docstring,
+    too-few-public-methods,
+    too-many-arguments,
+    too-many-locals,
+    too-many-statements,
+    no-name-in-module,
+    line-too-long,
+    too-many-positional-arguments
+
+[FORMAT]
+# Set max line length (but we're ignoring the check anyway)
+max-line-length=120
+

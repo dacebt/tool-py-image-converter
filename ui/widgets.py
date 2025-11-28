@@ -2,8 +2,9 @@
 Custom styled widget classes that apply the application theme.
 """
 
-from PyQt6.QtWidgets import QLabel, QLineEdit, QPushButton, QTextEdit
 from typing import Literal
+
+from PyQt6.QtWidgets import QLabel, QLineEdit, QPushButton, QTextEdit
 
 from ui.theme import Theme
 
@@ -201,7 +202,7 @@ class StyledText(QTextEdit):  # pylint: disable=too-many-ancestors
         """)
         
         # Handle state (read-only)
-        if state == "disabled" or state == "DISABLED":
+        if state in ("disabled", "DISABLED"):
             self.setReadOnly(True)
         else:
             self.setReadOnly(False)

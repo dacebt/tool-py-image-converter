@@ -248,7 +248,7 @@ class Theme:  # pylint: disable=too-few-public-methods
                     border-color: {cls.GRAY_DARK};
                 }}
             """
-        elif button_type == "SECONDARY":
+        if button_type == "SECONDARY":
             return f"""
                 QPushButton {{
                     background-color: {cls.ACCENT_BLUE};
@@ -272,7 +272,7 @@ class Theme:  # pylint: disable=too-few-public-methods
                     border-color: {cls.GRAY_DARKEST};
                 }}
             """
-        elif button_type == "DISABLED":
+        if button_type == "DISABLED":
             return f"""
                 QPushButton {{
                     background-color: {cls.GRAY_DARKEST};
