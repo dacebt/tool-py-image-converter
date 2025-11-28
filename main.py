@@ -3,10 +3,12 @@
 Main entry point for PNG to WebP batch converter GUI tool.
 """
 
-import tkinter as tk
+import sys
 from pathlib import Path
 
 from PIL import Image
+from PyQt6.QtGui import QIcon
+from PyQt6.QtWidgets import QApplication
 
 from ui.app import ConverterApp
 
@@ -122,28 +124,27 @@ def convert_png_to_webp(source: Path, dest: Path) -> bool:
 
 def main() -> None:
     """Main entry point for the application."""
-    root = tk.Tk()
+    app = QApplication(sys.argv)
 
     # Set application icon
     try:
         icon_path = Path(__file__).parent / "assets" / "logo_favicon.png"
         if icon_path.exists():
-            # Use iconphoto for better cross-platform support
-            icon_image = tk.PhotoImage(file=str(icon_path))
-            root.iconphoto(True, icon_image)
+            app.setWindowIcon(QIcon(str(icon_path)))
     except Exception:  # pylint: disable=broad-exception-caught
         # Icon loading failed, continue without icon
         pass
 
     # Create app instance with conversion functions
-    # Store reference to prevent garbage collection
-    _ = ConverterApp(
-        root,
+    window = ConverterApp(
+        app,
         find_png_files_func=find_png_files,
         transform_path_func=transform_path,
         convert_png_to_webp_func=convert_png_to_webp
     )
-    root.mainloop()
+    window.show()
+
+    sys.exit(app.exec())
 
 
 if __name__ == "__main__":

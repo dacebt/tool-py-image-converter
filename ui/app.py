@@ -4,21 +4,29 @@ Main application window for PNG to WebP batch converter.
 
 import queue
 import threading
-import tkinter as tk
 from pathlib import Path
-from tkinter import filedialog
+
+from PyQt6.QtCore import QTimer
+from PyQt6.QtWidgets import (
+    QApplication,
+    QFileDialog,
+    QHBoxLayout,
+    QMainWindow,
+    QVBoxLayout,
+    QWidget,
+)
 
 from ui.conversion_utils import run_conversion_worker
 from ui.theme import Theme
 from ui.widgets import StyledButton, StyledEntry, StyledLabel, StyledText
 
 
-class ConverterApp:  # pylint: disable=too-many-instance-attributes,too-few-public-methods
+class ConverterApp(QMainWindow):  # pylint: disable=too-many-instance-attributes,too-few-public-methods
     """Main application window for PNG to WebP batch converter."""
 
     def __init__(
         self,
-        root: tk.Tk,
+        app: QApplication,
         find_png_files_func,
         transform_path_func,
         convert_png_to_webp_func
@@ -27,16 +35,19 @@ class ConverterApp:  # pylint: disable=too-many-instance-attributes,too-few-publ
         Initialize the GUI application.
 
         Args:
-            root: Root tkinter window
+            app: QApplication instance
             find_png_files_func: Function to find PNG files (from main module)
             transform_path_func: Function to transform paths (from main module)
             convert_png_to_webp_func: Function to convert PNG to WebP (from main module)
         """
-        self.root = root
-        self.root.title("PNG to WebP Converter")
-        self.root.geometry("700x500")
-        self.root.resizable(True, True)
-        self.root.configure(bg=Theme.BACKGROUND)
+        super().__init__()
+        self.app = app
+        
+        self.setWindowTitle("PNG to WebP Converter")
+        self.setGeometry(100, 100, 700, 500)
+        
+        # Apply theme stylesheet
+        self.setStyleSheet(Theme.get_stylesheet())
 
         # Store conversion functions
         self.find_png_files = find_png_files_func
@@ -61,93 +72,103 @@ class ConverterApp:  # pylint: disable=too-many-instance-attributes,too-few-publ
 
     def _create_widgets(self) -> None:
         """Create and layout all GUI widgets."""
+        # Central widget and main layout
+        central_widget = QWidget()
+        self.setCentralWidget(central_widget)
+        main_layout = QVBoxLayout(central_widget)
+        main_layout.setSpacing(10)
+        main_layout.setContentsMargins(10, 10, 10, 10)
+
         # Source folder selection
-        source_frame = tk.Frame(self.root, padx=10, pady=5, bg=Theme.BACKGROUND)
-        source_frame.pack(fill=tk.X)
+        source_label = StyledLabel(self, text="Source Folder:")
+        main_layout.addWidget(source_label)
 
-        StyledLabel(source_frame, text="Source Folder:").pack(anchor=tk.W)
-        source_entry_frame = tk.Frame(source_frame, bg=Theme.BACKGROUND)
-        source_entry_frame.pack(fill=tk.X, pady=(5, 0))
+        source_entry_layout = QHBoxLayout()
+        source_entry_layout.setSpacing(5)
 
-        self.source_entry = StyledEntry(source_entry_frame)
-        self.source_entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
-        self.source_entry.bind("<KeyRelease>", self._on_source_change)
+        self.source_entry = StyledEntry(self)
+        self.source_entry.textChanged.connect(self._on_source_change)
+        source_entry_layout.addWidget(self.source_entry)
 
-        StyledButton(
-            source_entry_frame,
+        source_browse_button = StyledButton(
+            self,
             button_type="SECONDARY",
             text="Browse",
-            command=self._browse_source
-        ).pack(side=tk.LEFT, padx=(5, 0))
+        )
+        source_browse_button.clicked.connect(self._browse_source)
+        source_entry_layout.addWidget(source_browse_button)
+
+        main_layout.addLayout(source_entry_layout)
 
         # Destination folder selection
-        dest_frame = tk.Frame(self.root, padx=10, pady=5, bg=Theme.BACKGROUND)
-        dest_frame.pack(fill=tk.X)
+        dest_label = StyledLabel(self, text="Destination Folder:")
+        main_layout.addWidget(dest_label)
 
-        StyledLabel(dest_frame, text="Destination Folder:").pack(anchor=tk.W)
-        dest_entry_frame = tk.Frame(dest_frame, bg=Theme.BACKGROUND)
-        dest_entry_frame.pack(fill=tk.X, pady=(5, 0))
+        dest_entry_layout = QHBoxLayout()
+        dest_entry_layout.setSpacing(5)
 
-        self.dest_entry = StyledEntry(dest_entry_frame)
-        self.dest_entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
-        self.dest_entry.bind("<KeyRelease>", self._on_dest_change)
+        self.dest_entry = StyledEntry(self)
+        self.dest_entry.textChanged.connect(self._on_dest_change)
+        dest_entry_layout.addWidget(self.dest_entry)
 
-        StyledButton(
-            dest_entry_frame,
+        dest_browse_button = StyledButton(
+            self,
             button_type="SECONDARY",
             text="Browse",
-            command=self._browse_dest
-        ).pack(side=tk.LEFT, padx=(5, 0))
+        )
+        dest_browse_button.clicked.connect(self._browse_dest)
+        dest_entry_layout.addWidget(dest_browse_button)
+
+        main_layout.addLayout(dest_entry_layout)
 
         # Convert button
-        button_frame = tk.Frame(self.root, padx=10, pady=10, bg=Theme.BACKGROUND)
-        button_frame.pack(fill=tk.X)
-
         self.convert_button = StyledButton(
-            button_frame,
+            self,
             button_type="PRIMARY",
             text="Convert",
-            command=self._on_convert_click,
-            state=tk.DISABLED
         )
-        self.convert_button.pack()
+        self.convert_button.clicked.connect(self._on_convert_click)
+        self.convert_button.setEnabled(False)
+        main_layout.addWidget(self.convert_button)
 
         # Status/log area
-        log_frame = tk.Frame(self.root, padx=10, pady=5, bg=Theme.BACKGROUND)
-        log_frame.pack(fill=tk.BOTH, expand=True)
+        status_label = StyledLabel(self, text="Status:")
+        main_layout.addWidget(status_label)
 
-        StyledLabel(log_frame, text="Status:").pack(anchor=tk.W)
         self.status_text = StyledText(
-            log_frame,
-            height=15,
-            state=tk.DISABLED
+            self,
+            state="disabled"
         )
-        self.status_text.pack(fill=tk.BOTH, expand=True, pady=(5, 0))
+        main_layout.addWidget(self.status_text)
 
     def _browse_source(self) -> None:
         """Open folder dialog for source directory selection."""
-        folder = filedialog.askdirectory(title="Select Source Folder")
+        folder = QFileDialog.getExistingDirectory(
+            self,
+            "Select Source Folder"
+        )
         if folder:
             self.source_dir = Path(folder)
-            self.source_entry.delete(0, tk.END)
-            self.source_entry.insert(0, str(self.source_dir))
+            self.source_entry.setText(str(self.source_dir))
             self._discover_png_files()
             self._update_convert_button_state()
             self._log_status(f"Source folder selected: {self.source_dir}")
 
     def _browse_dest(self) -> None:
         """Open folder dialog for destination directory selection."""
-        folder = filedialog.askdirectory(title="Select Destination Folder")
+        folder = QFileDialog.getExistingDirectory(
+            self,
+            "Select Destination Folder"
+        )
         if folder:
             self.dest_dir = Path(folder)
-            self.dest_entry.delete(0, tk.END)
-            self.dest_entry.insert(0, str(self.dest_dir))
+            self.dest_entry.setText(str(self.dest_dir))
             self._update_convert_button_state()
             self._log_status(f"Destination folder selected: {self.dest_dir}")
 
-    def _on_source_change(self, event: tk.Event) -> None:  # pylint: disable=unused-argument
+    def _on_source_change(self) -> None:
         """Handle source entry field changes."""
-        text = self.source_entry.get().strip()
+        text = self.source_entry.text().strip()
         try:
             path_obj = Path(text) if text else None
             if path_obj and path_obj.exists() and path_obj.is_dir():
@@ -163,9 +184,9 @@ class ConverterApp:  # pylint: disable=too-many-instance-attributes,too-few-publ
         finally:
             self._update_convert_button_state()
 
-    def _on_dest_change(self, event: tk.Event) -> None:  # pylint: disable=unused-argument
+    def _on_dest_change(self) -> None:
         """Handle destination entry field changes."""
-        text = self.dest_entry.get().strip()
+        text = self.dest_entry.text().strip()
         try:
             self.dest_dir = Path(text) if text else None
         except Exception:  # pylint: disable=broad-exception-caught
@@ -176,9 +197,9 @@ class ConverterApp:  # pylint: disable=too-many-instance-attributes,too-few-publ
     def _update_convert_button_state(self) -> None:
         """Enable/disable convert button based on folder selection state."""
         if self.source_dir and self.dest_dir:
-            self.convert_button.config(state=tk.NORMAL)
+            self.convert_button.setEnabled(True)
         else:
-            self.convert_button.config(state=tk.DISABLED)
+            self.convert_button.setEnabled(False)
 
     def _log_status(self, message: str) -> None:
         """
@@ -191,10 +212,13 @@ class ConverterApp:  # pylint: disable=too-many-instance-attributes,too-few-publ
 
     def _log_status_direct(self, message: str) -> None:
         """Append message directly to status text area (main thread only)."""
-        self.status_text.config(state=tk.NORMAL)
-        self.status_text.insert(tk.END, message + "\n")
-        self.status_text.see(tk.END)
-        self.status_text.config(state=tk.DISABLED)
+        self.status_text.setReadOnly(False)
+        self.status_text.append(message)
+        # Scroll to bottom
+        cursor = self.status_text.textCursor()
+        cursor.movePosition(cursor.MoveOperation.End)
+        self.status_text.setTextCursor(cursor)
+        self.status_text.setReadOnly(True)
 
     def _update_button_progress(self, current: int, total: int) -> None:
         """
@@ -219,7 +243,7 @@ class ConverterApp:  # pylint: disable=too-many-instance-attributes,too-few-publ
         Process messages from the worker thread queue.
 
         This method runs on the main thread and handles all GUI updates
-        from the background conversion thread. tkinter isn't thread-safe,
+        from the background conversion thread. PyQt6 isn't thread-safe,
         so all GUI operations must happen here.
         """
         messages_processed = 0
@@ -236,10 +260,8 @@ class ConverterApp:  # pylint: disable=too-many-instance-attributes,too-few-publ
                     elif msg_type == "progress":
                         # Update button with progress
                         current, total = message[1], message[2]
-                        self.convert_button.config(
-                            text=f"Converting... ({current}/{total})",
-                            state=tk.DISABLED
-                        )
+                        self.convert_button.setText(f"Converting... ({current}/{total})")
+                        self.convert_button.setEnabled(False)
                     elif msg_type == "complete":
                         # Conversion complete - restore button and show summary
                         success_count, error_count = message[1], message[2]
@@ -248,10 +270,8 @@ class ConverterApp:  # pylint: disable=too-many-instance-attributes,too-few-publ
                             f"received - {success_count} succeeded, {error_count} failed"
                         )
                         print(msg)
-                        self.convert_button.config(
-                            text="Convert",
-                            state=tk.NORMAL
-                        )
+                        self.convert_button.setText("Convert")
+                        self.convert_button.setEnabled(True)
                         summary = (
                             f"\nConversion complete: {success_count} succeeded, "
                             f"{error_count} failed"
@@ -271,7 +291,7 @@ class ConverterApp:  # pylint: disable=too-many-instance-attributes,too-few-publ
             print(f"[GUI] Processed {messages_processed} message(s) from queue")
 
         # Schedule next check (runs every 100ms)
-        self.root.after(100, self._process_queue)
+        QTimer.singleShot(100, self._process_queue)
 
     def _discover_png_files(self) -> None:
         """Discover PNG files in the source directory and update status."""
@@ -299,7 +319,8 @@ class ConverterApp:  # pylint: disable=too-many-instance-attributes,too-few-publ
 
         # Disable convert button and update state
         self.is_converting = True
-        self.convert_button.config(state=tk.DISABLED, text="Starting...")
+        self.convert_button.setText("Starting...")
+        self.convert_button.setEnabled(False)
         # Called from main thread, so use direct logging
         self._log_status_direct(
             f"Starting conversion of {len(self.png_files)} file(s)..."
